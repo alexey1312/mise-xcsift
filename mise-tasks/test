@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+#MISE description="Run plugin tests - install and execute tool"
+set -euo pipefail
+
+mise plugin link --force xcsift .
+mise cache clear
+
+# Detect OS
+OS="$(uname -s)"
+case "$OS" in
+    Darwin*)
+        echo "✓ Running on macOS - testing full installation"
+        mise install xcsift@1.0.11
+
+        # Capture and display the output while also verifying it
+        output=$(mise exec "xcsift@1.0.11" -- "xcsift" --version)
+        echo "xcsift output: $output"
+
+        if echo "$output" | grep -q '1.0.11'; then
+            echo "✓ Tests passed - xcsift installed and working"
+        else
+            echo "✗ Test failed: expected version 1.0.11"
+            exit 1
+        fi
+        ;;
+    Linux*)
+        echo "⚠ Running on Linux - xcsift is macOS-only"
+        echo "✓ Testing that plugin correctly reports platform incompatibility"
+
+        # Verify plugin correctly rejects non-macOS installation
+        # Use case-insensitive search and show actual output if it fails
+        output=$(mise install xcsift@1.0.11 2>&1 || true)
+        if echo "$output" | grep -qi "only available for macOS"; then
+            echo "✓ Tests passed - plugin correctly rejects Linux installation"
+        else
+            echo "✗ Test failed: plugin should report macOS-only requirement"
+            echo "Actual error output:"
+            echo "$output"
+            exit 1
+        fi
+        ;;
+    *)
+        echo "✗ Unsupported OS: $OS"
+        exit 1
+        ;;
+esac

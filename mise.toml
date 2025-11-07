@@ -1,0 +1,6 @@
+[env]
+MISE_USE_VERSIONS_HOST = "0"
+
+[tasks.ci]
+description = "Run plugin installation test"
+depends = ["test"]
